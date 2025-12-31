@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Button } from './Button';
 import { WalletIcon } from './Icons';
 
@@ -6,24 +6,20 @@ interface WalletConnectProps {
   isConnected: boolean;
   onConnect: () => void;
   onDisconnect: () => void;
+  address?: string; // Added optional address prop
 }
 
-export const WalletConnect: React.FC<WalletConnectProps> = ({ isConnected, onConnect, onDisconnect }) => {
-  const [address, setAddress] = useState<string>('');
-
-  useEffect(() => {
-    if (isConnected) {
-      // Mock address generation
-      setAddress('8xRt...j9Lq');
-    }
-  }, [isConnected]);
+export const WalletConnect: React.FC<WalletConnectProps> = ({ isConnected, onConnect, onDisconnect, address }) => {
+  const displayAddress = address 
+    ? `${address.slice(0, 4)}...${address.slice(-4)}`
+    : '';
 
   if (isConnected) {
     return (
       <div className="flex items-center gap-1 bg-science-950 rounded-lg p-1 border border-white/10 shadow-sm">
         <div className="flex items-center gap-2 px-3">
            <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></div>
-           <span className="text-xs font-mono text-slate-300">{address}</span>
+           <span className="text-xs font-mono text-slate-300">{displayAddress}</span>
         </div>
         <button 
             onClick={onDisconnect}

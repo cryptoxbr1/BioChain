@@ -1,75 +1,118 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Layout } from './components/Layout';
 import { Dashboard } from './views/Dashboard';
 import { Upload } from './views/Upload';
 import { Report } from './views/Report';
 import { ViewState, DockingJob, JobStatus } from './types';
-import { MOCK_JOBS } from './constants';
+import { connectWallet, disconnectWallet, checkWalletConnection, verifyJobOnChain } from './services/solanaService';
+import { parseDockingFile } from './services/fileParser';
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewState>('DASHBOARD');
-  const [jobs, setJobs] = useState<DockingJob[]>(MOCK_JOBS);
+  // Initialize jobs from localStorage or empty array
+  const [jobs, setJobs] = useState<DockingJob[]>(() => {
+    const saved = localStorage.getItem('biochain_jobs');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [selectedJob, setSelectedJob] = useState<DockingJob | null>(null);
   const [walletConnected, setWalletConnected] = useState<boolean>(false);
+  const [walletAddress, setWalletAddress] = useState<string>("");
 
-  const toggleWallet = () => {
-    setWalletConnected(prev => !prev);
+  // Check for wallet connection on load
+  useEffect(() => {
+    checkWalletConnection().then(addr => {
+      if (addr) {
+        setWalletConnected(true);
+        setWalletAddress(addr);
+      }
+    });
+  }, []);
+
+  // Persist jobs to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('biochain_jobs', JSON.stringify(jobs));
+  }, [jobs]);
+
+  const toggleWallet = async () => {
+    if (walletConnected) {
+      await disconnectWallet();
+      setWalletConnected(false);
+      setWalletAddress("");
+    } else {
+      const addr = await connectWallet();
+      if (addr) {
+        setWalletConnected(true);
+        setWalletAddress(addr);
+      }
+    }
   };
 
-  const handleUpload = (file: File) => {
-    // Simulate job creation
+  const handleUpload = async (file: File) => {
+    // 1. Parse the real file
+    const realStats = await parseDockingFile(file);
+
     const newJob: DockingJob = {
-      id: `job-${Math.floor(Math.random() * 1000)}`,
+      id: `job-${Date.now().toString().slice(-6)}`,
       filename: file.name,
       uploadDate: new Date().toISOString().split('T')[0],
       status: JobStatus.PROCESSING,
       moleculeName: file.name.split('.')[0] || 'Unknown Compound',
-      stats: {
-        dockingScore: -(Math.random() * 5 + 5).toFixed(1) as any as number, // Random score between -5 and -10
-        bindingEfficiency: parseFloat((Math.random() * 0.5).toFixed(2)),
-        molecularWeight: Math.floor(Math.random() * 200 + 300),
-        hBondDonors: Math.floor(Math.random() * 5),
-        hBondAcceptors: Math.floor(Math.random() * 8)
-      }
+      stats: realStats
     };
 
     setJobs(prev => [newJob, ...prev]);
     setCurrentView('DASHBOARD');
     
-    // Simulate completing the job after a delay
+    // Simulate processing time for UX, but data is already parsed
     setTimeout(() => {
         setJobs(prev => prev.map(j => j.id === newJob.id ? { ...j, status: JobStatus.COMPLETED } : j));
-    }, 3000);
+    }, 2000);
   };
 
   const handleSelectJob = (job: DockingJob) => {
     setSelectedJob(job);
-    // We stay on the current view (likely DASHBOARD), but overlay the report
   };
 
   const closeReport = () => {
     setSelectedJob(null);
   };
 
-  const handleVerifyOnChain = (jobId: string) => {
-      // Simulate blockchain transaction
-      setJobs(prev => prev.map(j => {
-          if (j.id === jobId) {
-              return { 
-                  ...j, 
-                  status: JobStatus.VERIFIED,
-                  txHash: Array.from({length: 64}, () => Math.floor(Math.random()*16).toString(16)).join('')
-              };
-          }
-          return j;
-      }));
-      // Update selected job view as well if it's the one open
-      if (selectedJob && selectedJob.id === jobId) {
-          setSelectedJob(prev => prev ? ({ 
-              ...prev, 
-              status: JobStatus.VERIFIED, 
-              txHash: 'simulated_tx_hash_updated' 
-          }) : null);
+  const handleVerifyOnChain = async (jobId: string) => {
+      const jobToVerify = jobs.find(j => j.id === jobId);
+      if (!jobToVerify || !jobToVerify.stats) return;
+
+      try {
+        const txHash = await verifyJobOnChain(
+            jobId, 
+            jobToVerify.moleculeName, 
+            jobToVerify.stats.dockingScore
+        );
+
+        const updatedJobs = jobs.map(j => {
+            if (j.id === jobId) {
+                return { 
+                    ...j, 
+                    status: JobStatus.VERIFIED,
+                    txHash: txHash
+                };
+            }
+            return j;
+        });
+
+        setJobs(updatedJobs);
+        
+        // Update selected job view
+        if (selectedJob && selectedJob.id === jobId) {
+            setSelectedJob({ 
+                ...selectedJob, 
+                status: JobStatus.VERIFIED, 
+                txHash: txHash 
+            });
+        }
+        alert("Verification successful! Transaction hash: " + txHash);
+
+      } catch (err) {
+          alert("Verification failed: " + (err as Error).message);
       }
   };
 
@@ -90,7 +133,6 @@ const App: React.FC = () => {
             onCancel={() => setCurrentView('DASHBOARD')} 
           />
         );
-      // case 'REPORT': is now handled via overlay
       default:
         return (
           <Dashboard 
@@ -108,6 +150,7 @@ const App: React.FC = () => {
       setView={(view) => { setCurrentView(view); setSelectedJob(null); }} 
       walletConnected={walletConnected} 
       toggleWallet={toggleWallet}
+      walletAddress={walletAddress}
     >
       {renderContent()}
 

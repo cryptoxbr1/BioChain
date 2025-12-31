@@ -9,6 +9,7 @@ interface LayoutProps {
   setView: (view: ViewState) => void;
   walletConnected: boolean;
   toggleWallet: () => void;
+  walletAddress?: string;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ 
@@ -16,7 +17,8 @@ export const Layout: React.FC<LayoutProps> = ({
   currentView, 
   setView, 
   walletConnected, 
-  toggleWallet 
+  toggleWallet,
+  walletAddress
 }) => {
   return (
     <div className="min-h-screen bg-science-900 text-slate-100 flex">
@@ -33,6 +35,7 @@ export const Layout: React.FC<LayoutProps> = ({
               isConnected={walletConnected} 
               onConnect={toggleWallet} 
               onDisconnect={toggleWallet} 
+              address={walletAddress}
             />
           </div>
         </header>

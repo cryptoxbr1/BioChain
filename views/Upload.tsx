@@ -68,7 +68,6 @@ export const Upload: React.FC<UploadProps> = ({ onUpload, onCancel }) => {
       if (validateFile(selectedFile)) {
         setFile(selectedFile);
       } else {
-        // Reset input value if needed, though react handles state
         setFile(null);
       }
     }
@@ -80,16 +79,17 @@ export const Upload: React.FC<UploadProps> = ({ onUpload, onCancel }) => {
       setProgress(0);
       setError(null);
       
+      // Simulate upload progress for UX (reading file is fast locally)
       const interval = window.setInterval(() => {
         setProgress((prev) => {
           if (prev >= 100) {
             window.clearInterval(interval);
-            setTimeout(() => onUpload(file), 500);
+            setTimeout(() => onUpload(file), 200); // Pass the real file
             return 100;
           }
-          return prev + 5; 
+          return prev + 10; 
         });
-      }, 100); 
+      }, 50); 
       
       intervalRef.current = interval;
     }
@@ -99,7 +99,7 @@ export const Upload: React.FC<UploadProps> = ({ onUpload, onCancel }) => {
     <div className="max-w-3xl mx-auto py-12 animate-slideUp">
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">New Analysis</h2>
-        <p className="text-slate-400 max-w-lg mx-auto">Upload your molecular docking files (PDBQT, SDF) to generate AI-driven insights and on-chain verification.</p>
+        <p className="text-slate-400 max-w-lg mx-auto">Upload your molecular docking files (PDBQT, SDF) to generate real-time AI insights and on-chain verification.</p>
       </div>
 
       <Card className={`p-12 border-2 border-dashed transition-all duration-300 relative overflow-hidden group ${dragActive ? 'border-science-500 bg-science-900/80 shadow-[0_0_30px_rgba(59,130,246,0.15)]' : 'border-science-700/50 bg-science-900/30 hover:bg-science-900/50 hover:border-science-600'} ${error ? 'border-red-500/50' : ''}`}>
@@ -116,11 +116,11 @@ export const Upload: React.FC<UploadProps> = ({ onUpload, onCancel }) => {
                 </div>
             </div>
             
-            <h3 className="text-xl font-medium text-white">Processing {file?.name}</h3>
+            <h3 className="text-xl font-medium text-white">Parsing {file?.name}</h3>
             
             <div className="w-full max-w-sm space-y-3">
               <div className="flex justify-between text-xs font-semibold text-science-400 uppercase tracking-widest">
-                <span>Uploading</span>
+                <span>Processing</span>
                 <span>{progress}%</span>
               </div>
               <div className="w-full h-1.5 bg-science-950 rounded-full overflow-hidden border border-white/10">
@@ -130,7 +130,7 @@ export const Upload: React.FC<UploadProps> = ({ onUpload, onCancel }) => {
                 />
               </div>
               <p className="text-center text-xs text-slate-500 pt-2 font-mono">
-                Calculating SHA-256 Checksum...
+                Extracting atomic coordinates & scores...
               </p>
             </div>
           </div>
