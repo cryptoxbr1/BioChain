@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from './Button';
-import { WalletIcon } from './Icons';
+import { PhantomIcon } from './Icons';
 
 interface WalletConnectProps {
   isConnected: boolean;
@@ -32,8 +32,8 @@ export const WalletConnect: React.FC<WalletConnectProps> = ({ isConnected, onCon
   }
 
   return (
-    <Button variant="solana" onClick={onConnect} className="!py-1.5 !px-3 !text-xs !font-semibold">
-      <WalletIcon className="w-3 h-3" /> Connect Wallet
+    <Button variant="solana" onClick={onConnect} className="!py-1.5 !px-3 !text-xs !font-bold">
+      <PhantomIcon className="w-4 h-4" /> Connect Phantom
     </Button>
   );
 };

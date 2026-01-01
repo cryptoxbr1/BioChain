@@ -7,6 +7,7 @@ import {
   TransactionInstruction
 } from "@solana/web3.js";
 import { serialize, deserialize } from "borsh";
+import { Buffer } from "buffer";
 
 // ------------------------------------------------------------------
 // ON-CHAIN PROGRAM CONFIGURATION
@@ -47,7 +48,9 @@ export class DockingReportSchema {
   }
 }
 
-const DockingReportBorsh = new Map([
+// Using 'any' type for the schema map to avoid TypeScript type incompatibility 
+// between 'Map<Function, any>' and borsh's 'Schema' type definition.
+const DockingReportBorsh: any = new Map([
   [
     DockingReportSchema,
     {
@@ -76,6 +79,7 @@ interface SolanaProvider {
 }
 
 const getProvider = (): SolanaProvider | null => {
+  // 1. Check specifically for Phantom
   if ('phantom' in window) {
     const provider = (window as any).phantom?.solana;
     if (provider?.isPhantom) {
@@ -83,11 +87,13 @@ const getProvider = (): SolanaProvider | null => {
     }
   }
 
+  // 2. Fallback to standard window.solana injection, but prioritize Phantom check
   if ('solana' in window) {
     const provider = (window as any).solana;
-    if (provider) {
-      return provider;
+    if (provider.isPhantom) {
+        return provider;
     }
+    // Note: We avoid generic non-Phantom providers if the user specifically requested Phantom only
   }
 
   return null;
@@ -114,8 +120,7 @@ export const connectWallet = async (): Promise<string | null> => {
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     
     if (isMobile) {
-        // Instead of auto-redirecting, which causes loops and bad UX,
-        // we prompt the user to open the app manually.
+        // Use Phantom Mobile Deep Link
         const currentUrl = encodeURIComponent(window.location.href);
         const ref = encodeURIComponent(window.location.origin);
         const deepLink = `https://phantom.app/ul/browse/${currentUrl}?ref=${ref}`;
@@ -190,7 +195,8 @@ export const verifyJobOnChain = async (jobId: string, moleculeName: string, scor
   const serializedData = serialize(DockingReportBorsh, reportData);
   
   // Note: We use the Uint8Array directly as Buffer is not available in browser environment without polyfill
-  const instructionData = serializedData;
+  // We use Buffer.from to ensure it matches the expected type for TransactionInstruction
+  const instructionData = Buffer.from(serializedData);
 
   // 3. Construct the Transaction Instruction
   const transaction = new Transaction();
@@ -264,11 +270,11 @@ export const fetchJobFromChain = async (signature: string): Promise<DockingRepor
 
     // 4. Deserialize
     // We must deserialize it into the DockingReportSchema class
-    const decoded: DockingReportSchema = deserialize(
+    const decoded = deserialize(
       DockingReportBorsh, 
       DockingReportSchema, 
-      dataBuffer
-    );
+      Buffer.from(dataBuffer)
+    ) as DockingReportSchema;
 
     return decoded;
 

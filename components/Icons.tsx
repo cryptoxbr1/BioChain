@@ -76,6 +76,18 @@ export const WalletIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
   </svg>
 );
 
+export const PhantomIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" className={className} fill="currentColor">
+    <path d="M99.6 57.3C98.4 41.5 85.3 29 69.2 29h-9.6c-16.1 0-29.2 12.5-30.4 28.3 0 0.6 0 1.3 0 1.9 0 18.2 13.5 33.5 31.4 36.1 0.7 2.1 0.9 4.3 0.9 6.2 0.1 2.2 2.2 3.6 4.1 2.7 2-0.9 6.7-3.8 9.3-7.4 1.8 0.7 3.7 1 5.7 1 12.5 0 23.3-7.5 28.3-18.4 2.8-6 5.8-12.2 5.8-12.2 0.3-2.9 0.4-5.8 0.4-8.8 0-0.4-4.5-0.7-5.5-1.1z M52.5 61.3c-3.1 0-5.6-2.5-5.6-5.6s2.5-5.6 5.6-5.6 5.6 2.5 5.6 5.6-2.5 5.6-5.6 5.6z M76.2 61.3c-3.1 0-5.6-2.5-5.6-5.6s2.5-5.6 5.6-5.6 5.6 2.5 5.6 5.6-2.5 5.6-5.6 5.6z" />
+  </svg>
+);
+
+export const PaperAirplaneIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+  </svg>
+);
+
 export const DownloadIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />

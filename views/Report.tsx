@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { DockingJob, JobStatus } from '../types';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { MoleculeViewer } from '../components/MoleculeViewer';
 import { Charts } from '../components/Charts';
 import { SOLANA_EXPLORER_URL } from '../constants';
-import { generateReportFromStats } from '../services/geminiService';
+import { generateReportFromStats, createChatSession } from '../services/geminiService';
 import { fetchJobFromChain, DockingReportSchema } from '../services/solanaService';
-import { DownloadIcon, CheckCircleIcon, BeakerIcon, XMarkIcon, RefreshIcon } from '../components/Icons';
+import { DownloadIcon, CheckCircleIcon, BeakerIcon, XMarkIcon, RefreshIcon, PaperAirplaneIcon } from '../components/Icons';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { ChatSession } from "@google/genai";
 
 interface ReportProps {
   job: DockingJob;
@@ -18,8 +19,13 @@ interface ReportProps {
   isWalletConnected: boolean;
 }
 
+interface ChatMessage {
+    role: 'user' | 'model';
+    text: string;
+}
+
 export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWalletConnected }) => {
-  const [activeTab, setActiveTab] = useState<'summary' | 'details' | 'audit'>('summary');
+  const [activeTab, setActiveTab] = useState<'summary' | 'details' | 'audit' | 'chat'>('summary');
   const [aiReport, setAiReport] = useState<string>(job.reportSummary || '');
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [isExporting, setIsExporting] = useState<boolean>(false);
@@ -27,6 +33,13 @@ export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWallet
   // Real Verification State
   const [onChainData, setOnChainData] = useState<DockingReportSchema | null>(null);
   const [isLoadingChainData, setIsLoadingChainData] = useState(false);
+
+  // Chat State
+  const [chatSession, setChatSession] = useState<ChatSession | null>(null);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [isChatThinking, setIsChatThinking] = useState(false);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!aiReport && job.stats) {
@@ -37,7 +50,17 @@ export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWallet
         })
         .finally(() => setIsGenerating(false));
     }
+
+    if (job.stats) {
+        setChatSession(createChatSession(job.moleculeName, job.stats));
+    }
   }, [job, aiReport]);
+
+  useEffect(() => {
+    if (activeTab === 'chat' && chatScrollRef.current) {
+        chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages, activeTab]);
 
   // When opening Audit tab, fetch real chain data if Tx exists
   useEffect(() => {
@@ -55,6 +78,26 @@ export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWallet
       onVerify(job.id);
     } else {
       alert("Please connect your wallet first.");
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!chatInput.trim() || !chatSession) return;
+    
+    const userMsg = chatInput;
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setIsChatThinking(true);
+
+    try {
+        // Fix: @google/genai requires { message: string }
+        const result = await chatSession.sendMessage({ message: userMsg });
+        setChatMessages(prev => [...prev, { role: 'model', text: result.text || "I couldn't generate a response." }]);
+    } catch (e) {
+        console.error("Chat Error", e);
+        setChatMessages(prev => [...prev, { role: 'model', text: "Error connecting to AI service." }]);
+    } finally {
+        setIsChatThinking(false);
     }
   };
 
@@ -337,7 +380,7 @@ export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWallet
             {/* Right Column: Text Report */}
             <div className="col-span-12 xl:col-span-5 space-y-6">
                 <div className="flex p-1 bg-science-950 rounded-lg border border-white/5 sticky top-0 z-10 shadow-lg">
-                    {(['summary', 'details', 'audit'] as const).map((tab) => (
+                    {(['summary', 'details', 'audit', 'chat'] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
@@ -347,12 +390,12 @@ export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWallet
                                 : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
                             }`}
                         >
-                            {tab}
+                            {tab === 'chat' ? 'Ask AI' : tab}
                         </button>
                     ))}
                 </div>
 
-                <Card className="min-h-[500px] border-white/5 bg-science-900/40">
+                <Card className="min-h-[500px] border-white/5 bg-science-900/40 flex flex-col">
                     {activeTab === 'summary' && (
                         <div className="space-y-6">
                             <div className="flex items-center justify-between pb-4 border-b border-white/5">
@@ -495,6 +538,61 @@ export const Report: React.FC<ReportProps> = ({ job, onClose, onVerify, isWallet
                                     <p>Not yet verified on-chain.</p>
                                 </div>
                             )}
+                        </div>
+                    )}
+                    
+                    {activeTab === 'chat' && (
+                        <div className="flex-1 flex flex-col h-[500px]">
+                            <div className="flex items-center gap-2 pb-4 border-b border-white/5 text-science-400">
+                                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                                <h3 className="text-sm font-semibold uppercase tracking-wider">Live Agent</h3>
+                            </div>
+                            
+                            <div 
+                                className="flex-1 overflow-y-auto space-y-4 py-4 pr-2 scrollbar-thin scrollbar-thumb-science-700"
+                                ref={chatScrollRef}
+                            >
+                                {chatMessages.length === 0 && (
+                                    <div className="text-center text-slate-500 text-sm py-10">
+                                        Ask questions about the molecular properties, binding affinity, or optimization strategies.
+                                    </div>
+                                )}
+                                {chatMessages.map((msg, idx) => (
+                                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[85%] px-3 py-2 rounded-lg text-sm ${msg.role === 'user' ? 'bg-science-600 text-white' : 'bg-science-950/50 border border-white/5 text-slate-300'}`}>
+                                            {msg.text}
+                                        </div>
+                                    </div>
+                                ))}
+                                {isChatThinking && (
+                                    <div className="flex justify-start">
+                                         <div className="bg-science-950/50 border border-white/5 px-3 py-2 rounded-lg flex gap-1 items-center">
+                                             <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce"></div>
+                                             <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-100"></div>
+                                             <div className="w-1.5 h-1.5 bg-slate-500 rounded-full animate-bounce delay-200"></div>
+                                         </div>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="pt-4 border-t border-white/5 flex gap-2">
+                                <input 
+                                    type="text" 
+                                    className="flex-1 bg-science-950 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-science-500 transition-colors"
+                                    placeholder="Ask about this molecule..."
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+                                    disabled={isChatThinking}
+                                />
+                                <button 
+                                    className="p-2 bg-science-600 hover:bg-science-500 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    onClick={handleSendMessage}
+                                    disabled={isChatThinking || !chatInput.trim()}
+                                >
+                                    <PaperAirplaneIcon className="w-5 h-5" />
+                                </button>
+                            </div>
                         </div>
                     )}
                 </Card>

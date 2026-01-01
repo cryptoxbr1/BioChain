@@ -1,4 +1,4 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+import { GoogleGenAI, GenerateContentResponse, ChatSession } from "@google/genai";
 import { MoleculeStats } from "../types";
 
 const getAiClient = () => {
@@ -61,4 +61,29 @@ The molecular weight of ${stats.molecularWeight} Da falls within the drug-like r
     console.error("Gemini API Error:", error);
     return "Error generating AI report. Please check API configuration.";
   }
+};
+
+export const createChatSession = (
+  moleculeName: string,
+  stats: MoleculeStats
+): ChatSession | null => {
+  const ai = getAiClient();
+  if (!ai) return null;
+
+  return ai.chats.create({
+    model: 'gemini-3-flash-preview',
+    config: {
+      systemInstruction: `You are an expert computational chemist.
+      Context: Analyzing molecule "${moleculeName}".
+      Data: 
+      - Docking Score: ${stats.dockingScore} kcal/mol
+      - Binding Efficiency: ${stats.bindingEfficiency}
+      - MW: ${stats.molecularWeight}
+      - H-Donors: ${stats.hBondDonors}
+      - H-Acceptors: ${stats.hBondAcceptors}
+      
+      Answer questions concisely about potential binding modes, chemical properties, or implications of these stats.
+      Avoid markdown headers.`
+    }
+  });
 };
