@@ -4,6 +4,34 @@ interface IconProps {
   className?: string;
 }
 
+export const BioChainLogo: React.FC<IconProps> = ({ className = "w-10 h-10" }) => (
+  <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+    <defs>
+      <linearGradient id="logo_grad_main" x1="10" y1="10" x2="54" y2="54" gradientUnits="userSpaceOnUse">
+        <stop offset="0%" stopColor="#3b82f6" /> {/* Science Blue */}
+        <stop offset="100%" stopColor="#14F195" /> {/* Solana Green */}
+      </linearGradient>
+    </defs>
+    
+    {/* Hexagon Container */}
+    <path d="M32 4L58 19V45L32 60L6 45V19L32 4Z" stroke="url(#logo_grad_main)" strokeWidth="3" fill="rgba(59, 130, 246, 0.1)"/>
+    
+    {/* DNA Helix / Chain Link Structure */}
+    <path d="M22 22C22 22 26 18 32 18C38 18 42 22 42 22" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round"/>
+    <path d="M22 42C22 42 26 46 32 46C38 46 42 42 42 42" stroke="#94a3b8" strokeWidth="2.5" strokeLinecap="round"/>
+    
+    {/* Central Connection */}
+    <path d="M32 18V46" stroke="url(#logo_grad_main)" strokeWidth="3" strokeLinecap="round"/>
+    
+    {/* Nodes / Atoms */}
+    <circle cx="32" cy="32" r="5" fill="#3b82f6" stroke="#0f172a" strokeWidth="2"/>
+    <circle cx="22" cy="22" r="3" fill="#14F195"/>
+    <circle cx="42" cy="22" r="3" fill="#14F195"/>
+    <circle cx="22" cy="42" r="3" fill="#14F195"/>
+    <circle cx="42" cy="42" r="3" fill="#14F195"/>
+  </svg>
+);
+
 export const DashboardIcon: React.FC<IconProps> = ({ className = "w-5 h-5" }) => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />

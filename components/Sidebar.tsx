@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewState } from '../types';
-import { DashboardIcon, PlusIcon, BeakerIcon } from './Icons';
+import { DashboardIcon, PlusIcon, BioChainLogo } from './Icons';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -16,9 +16,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, setView }) => {
   return (
     <aside className="w-64 bg-science-950/50 border-r border-science-800 h-screen fixed left-0 top-0 flex flex-col z-20 hidden md:flex backdrop-blur-xl">
       <div className="p-6 border-b border-science-800 flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-science-500/20 text-science-400 border border-science-500/30 flex items-center justify-center">
-          <BeakerIcon className="w-5 h-5" />
-        </div>
+        <BioChainLogo className="w-10 h-10" />
         <span className="font-bold text-xl tracking-tight text-white">BioChain</span>
       </div>
       

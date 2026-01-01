@@ -2,6 +2,7 @@ import React from 'react';
 import { ViewState } from '../types';
 import { Sidebar } from './Sidebar';
 import { WalletConnect } from './WalletConnect';
+import { BioChainLogo } from './Icons';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -27,7 +28,8 @@ export const Layout: React.FC<LayoutProps> = ({
       <div className="flex-1 md:ml-64 flex flex-col min-w-0">
         <header className="h-16 border-b border-science-800 bg-science-900/90 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-10">
           <div className="md:hidden flex items-center gap-2">
-            <span className="font-bold text-science-accent">BioChain</span>
+            <BioChainLogo className="w-8 h-8" />
+            <span className="font-bold text-xl text-white tracking-tight">BioChain</span>
           </div>
           <div className="flex-1"></div> {/* Spacer */}
           <div className="flex items-center gap-4">
