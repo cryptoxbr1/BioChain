@@ -72,15 +72,24 @@ interface SolanaProvider {
   disconnect: () => Promise<void>;
   signAndSendTransaction: (transaction: Transaction) => Promise<{ signature: string }>;
   publicKey: PublicKey | null;
+  on?: (event: string, callback: (args: any) => void) => void;
 }
 
 const getProvider = (): SolanaProvider | null => {
-  if ('solana' in window) {
-    const provider = (window as any).solana;
-    if (provider.isPhantom) {
+  if ('phantom' in window) {
+    const provider = (window as any).phantom?.solana;
+    if (provider?.isPhantom) {
       return provider;
     }
   }
+
+  if ('solana' in window) {
+    const provider = (window as any).solana;
+    if (provider) {
+      return provider;
+    }
+  }
+
   return null;
 };
 
@@ -89,9 +98,36 @@ const getProvider = (): SolanaProvider | null => {
 // ------------------------------------------------------------------
 
 export const connectWallet = async (): Promise<string | null> => {
-  const provider = getProvider();
+  let provider = getProvider();
+
+  // Retry mechanism: Wait for injection (up to 1 second)
   if (!provider) {
-    window.open("https://phantom.app/", "_blank");
+      for (let i = 0; i < 10; i++) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+        provider = getProvider();
+        if (provider) break;
+      }
+  }
+  
+  if (!provider) {
+    // Detect mobile environment
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+        // Instead of auto-redirecting, which causes loops and bad UX,
+        // we prompt the user to open the app manually.
+        const currentUrl = encodeURIComponent(window.location.href);
+        const ref = encodeURIComponent(window.location.origin);
+        const deepLink = `https://phantom.app/ul/browse/${currentUrl}?ref=${ref}`;
+        
+        // Use a confirm dialog to give user control
+        if (confirm("Phantom wallet not detected. Open in Phantom App?")) {
+            window.location.href = deepLink;
+        }
+        return null;
+    }
+
+    alert("Phantom wallet not found. Please ensure the extension is installed.");
     return null;
   }
 
@@ -116,6 +152,7 @@ export const checkWalletConnection = async (): Promise<string | null> => {
   if (provider && provider.publicKey) {
     return provider.publicKey.toString();
   }
+  
   if (provider) {
       try {
           const resp = await provider.connect({ onlyIfTrusted: true });

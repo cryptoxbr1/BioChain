@@ -167,14 +167,6 @@ export const MoleculeViewer: React.FC = () => {
                 transformStyle: 'preserve-3d'
             }}
           >
-             <img 
-                src="https://picsum.photos/800/400?grayscale&blur=2" 
-                alt="Molecular Structure" 
-                className={`w-full h-full object-cover mix-blend-screen pointer-events-none ${bgMode === 'light' ? 'invert opacity-80' : 'opacity-40'}`}
-                draggable={false}
-                style={{ backfaceVisibility: 'hidden' }}
-             />
-             
              {/* Core Molecule Placeholder (Simulating the 3D Object center) */}
              <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ transformStyle: 'preserve-3d' }}>
                 <div className={`relative w-64 h-64 border rounded-full ${bgMode === 'light' ? 'border-slate-400/20' : 'border-science-500/20'}`} style={{ transform: 'translateZ(0)' }}>

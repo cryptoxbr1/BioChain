@@ -47,8 +47,13 @@ The molecular weight of ${stats.molecularWeight} Da falls within the drug-like r
     `;
 
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
+      config: {
+        thinkingConfig: {
+          thinkingBudget: 32768
+        }
+      }
     });
 
     return response.text || "No analysis generated.";
